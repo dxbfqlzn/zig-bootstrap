@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # This file is licensed under the public domain.
 
-set -eu
+set -eux
+
+PS4='[$(date "+%Y年 %m月 %d日 %A %H:%M:%S %Z")] [DEBUG] ${BASH_SOURCE}:${LINENO}: '
 
 TARGET="$1" # Example: riscv64-linux-gnu
 MCPU="$2" # Examples: `baseline`, `native`, `generic+v7a`, or `arm1176jzf_s`
@@ -58,7 +60,7 @@ cmake "$ROOTDIR/llvm" \
   -DCLANG_TOOL_C_INDEX_TEST_BUILD=OFF \
   -DCLANG_TOOL_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_C_ARCMT_TEST_BUILD=OFF \
-  -DCLANG_TOOL_LIBCLANG_BUILD=OFF
+  -DCLANG_TOOL_LIBCLANG_BUILD=OFF -GNinja
 cmake --build . --target install
 
 # Now we build Zig, still with system C/C++ compiler, linking against LLVM,
@@ -69,8 +71,8 @@ cmake "$ROOTDIR/zig" \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/host" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/host" \
   -DCMAKE_BUILD_TYPE=Release \
-  -DZIG_VERSION="$ZIG_VERSION"
-cmake --build . --target install
+  -DZIG_VERSION="$ZIG_VERSION" -GNinja
+cmake --build . --target install -v
 
 # Now we have Zig as a cross compiler.
 ZIG="$ROOTDIR/out/host/bin/zig"
@@ -82,7 +84,7 @@ cd "$ROOTDIR/out/build-zlib-$TARGET-$MCPU"
 cmake "$ROOTDIR/zlib" \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/$TARGET-$MCPU" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/$TARGET-$MCPU" \
-  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DCMAKE_CROSSCOMPILING=True \
   -DCMAKE_SYSTEM_NAME="$TARGET_OS_CMAKE" \
   -DCMAKE_C_COMPILER="$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
@@ -91,8 +93,8 @@ cmake "$ROOTDIR/zlib" \
   $CMAKE_LINK_DEPENDS_WORKAROUND \
   -DCMAKE_RC_COMPILER="$ROOTDIR/out/host/bin/llvm-rc" \
   -DCMAKE_AR="$ROOTDIR/out/host/bin/llvm-ar" \
-  -DCMAKE_RANLIB="$ROOTDIR/out/host/bin/llvm-ranlib"
-cmake --build . --target install
+  -DCMAKE_RANLIB="$ROOTDIR/out/host/bin/llvm-ranlib" -GNinja
+cmake --build . --target install -v
 
 # Same deal for zstd.
 # The build system for zstd is whack so I just put all the files here.
@@ -145,7 +147,7 @@ cd "$ROOTDIR/out/build-llvm-$TARGET-$MCPU"
 cmake "$ROOTDIR/llvm" \
   -DCMAKE_INSTALL_PREFIX="$ROOTDIR/out/$TARGET-$MCPU" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/$TARGET-$MCPU" \
-  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DCMAKE_CROSSCOMPILING=True \
   -DCMAKE_SYSTEM_NAME="$TARGET_OS_CMAKE" \
   -DCMAKE_C_COMPILER="$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
@@ -178,8 +180,8 @@ cmake "$ROOTDIR/llvm" \
   -DLLVM_INCLUDE_BENCHMARKS=OFF \
   -DLLVM_INCLUDE_DOCS=OFF \
   -DLLVM_DEFAULT_TARGET_TRIPLE="$TARGET" \
-  -DLLVM_TOOL_LLVM_LTO2_BUILD=OFF \
-  -DLLVM_TOOL_LLVM_LTO_BUILD=OFF \
+  -DLLVM_TOOL_LLVM_LTO2_BUILD=ON \
+  -DLLVM_TOOL_LLVM_LTO_BUILD=ON \
   -DLLVM_TOOL_LTO_BUILD=OFF \
   -DLLVM_TOOL_REMARKS_SHLIB_BUILD=OFF \
   -DCLANG_TABLEGEN="$ROOTDIR/out/build-llvm-host/bin/clang-tblgen" \
@@ -193,7 +195,7 @@ cmake "$ROOTDIR/llvm" \
   -DCLANG_TOOL_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_C_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_LIBCLANG_BUILD=OFF \
-  -DLLD_BUILD_TOOLS=OFF
+  -DLLD_BUILD_TOOLS=OFF -GNinja
 cmake --build . --target install
 
 # Finally, we can cross compile Zig itself, with Zig.
