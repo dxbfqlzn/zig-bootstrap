@@ -62,14 +62,19 @@ include(GNUInstallDirs)
 # This C++ standard is required to build LLVM.
 set(LLVM_REQUIRED_CXX_STANDARD 17)
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-    message(STATUS "Using ccache: ${CCACHE_FOUND}")
+option(LLVM_DISABLE_CCACHE "If set, disable ccache build" OFF)
+if(NOT LLVM_DISABLE_CCACHE)
+    find_program(CCACHE_FOUND ccache)
+    if(CCACHE_FOUND)
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+        message(STATUS "Using ccache: ${CCACHE_FOUND}")
+    else()
+        message(STATUS "Ccache not found. Compiling with cache will be disabled.")
+    endif(CCACHE_FOUND)
 else()
-    message(STATUS "Ccache not found. Compiling with cache will be disabled.")
-endif(CCACHE_FOUND)
+    message(WARNING "Warning: ccache build is disabled")
+endif()
 
 # If we find that the cache contains CMAKE_CXX_STANDARD it means that it's a old CMakeCache.txt
 # and we can just inform the user and then reset it.
