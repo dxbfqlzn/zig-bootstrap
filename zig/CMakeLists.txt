@@ -10,6 +10,15 @@ if(NOT CMAKE_INSTALL_PREFIX)
       "Directory to install zig to" FORCE)
 endif()
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+    message(STATUS "Using ccache: ${CCACHE_FOUND}")
+else()
+    message(STATUS "Ccache not found. Compiling with cache will be disabled.")
+endif(CCACHE_FOUND)
+
 # CMake recognizes the CMAKE_PREFIX_PATH environment variable for some things,
 # and also the CMAKE_PREFIX_PATH cache variable for other things. However, it
 # does not relate these two things, i.e. if the environment variable is set,
