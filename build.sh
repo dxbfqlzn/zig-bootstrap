@@ -87,9 +87,9 @@ cmake "$ROOTDIR/zlib" \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DCMAKE_CROSSCOMPILING=True \
   -DCMAKE_SYSTEM_NAME="$TARGET_OS_CMAKE" \
-  -DCMAKE_C_COMPILER="$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
-  -DCMAKE_CXX_COMPILER="$ZIG;c++;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
-  -DCMAKE_ASM_COMPILER="$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
+  -DCMAKE_C_COMPILER="ccache;$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
+  -DCMAKE_CXX_COMPILER="ccache;$ZIG;c++;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
+  -DCMAKE_ASM_COMPILER="ccache;$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
   $CMAKE_LINK_DEPENDS_WORKAROUND \
   -DCMAKE_RC_COMPILER="$ROOTDIR/out/host/bin/llvm-rc" \
   -DCMAKE_AR="$ROOTDIR/out/host/bin/llvm-ar" \
@@ -150,9 +150,9 @@ cmake "$ROOTDIR/llvm" \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DCMAKE_CROSSCOMPILING=True \
   -DCMAKE_SYSTEM_NAME="$TARGET_OS_CMAKE" \
-  -DCMAKE_C_COMPILER="$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
-  -DCMAKE_CXX_COMPILER="$ZIG;c++;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
-  -DCMAKE_ASM_COMPILER="$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
+  -DCMAKE_C_COMPILER="ccache;$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
+  -DCMAKE_CXX_COMPILER="ccache;$ZIG;c++;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
+  -DCMAKE_ASM_COMPILER="ccache;$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
   $CMAKE_LINK_DEPENDS_WORKAROUND \
   -DCMAKE_RC_COMPILER="$ROOTDIR/out/host/bin/llvm-rc" \
   -DCMAKE_AR="$ROOTDIR/out/host/bin/llvm-ar" \
@@ -169,7 +169,7 @@ cmake "$ROOTDIR/llvm" \
   -DLLVM_ENABLE_Z3_SOLVER=OFF \
   -DLLVM_ENABLE_ZLIB=FORCE_ON \
   -DLLVM_ENABLE_ZSTD=FORCE_ON \
-  -DLLVM_USE_STATIC_ZSTD=ON \
+  -DLLVM_USE_STATIC_ZSTD=FORCE_ON \
   -DLLVM_TABLEGEN="$ROOTDIR/out/host/bin/llvm-tblgen" \
   -DLLVM_BUILD_UTILS=OFF \
   -DLLVM_BUILD_TOOLS=OFF \
@@ -180,9 +180,9 @@ cmake "$ROOTDIR/llvm" \
   -DLLVM_INCLUDE_BENCHMARKS=OFF \
   -DLLVM_INCLUDE_DOCS=OFF \
   -DLLVM_DEFAULT_TARGET_TRIPLE="$TARGET" \
-  -DLLVM_TOOL_LLVM_LTO2_BUILD=ON \
-  -DLLVM_TOOL_LLVM_LTO_BUILD=ON \
-  -DLLVM_TOOL_LTO_BUILD=OFF \
+  -DLLVM_TOOL_LLVM_LTO2_BUILD=FORCE_ON \
+  -DLLVM_TOOL_LLVM_LTO_BUILD=FORCE_ON \
+  -DLLVM_TOOL_LTO_BUILD=FORCE_ON \
   -DLLVM_TOOL_REMARKS_SHLIB_BUILD=OFF \
   -DCLANG_TABLEGEN="$ROOTDIR/out/build-llvm-host/bin/clang-tblgen" \
   -DCLANG_BUILD_TOOLS=OFF \
