@@ -25,13 +25,13 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        sudo rm -rf /usr/share/rust /home/runner/.cargo /home/runner/.rustup  /opt/microsoft/powershell /opt/hostedtoolcache /opt/pipx /usr/share/vcpkg  /usr/share/dotnet /home/runner/.dotnet /usr/share/firebird* /opt/hhvm /usr/share/sbt /var/cache/snapd /home/runner/snap /usr/share/swift /usr/local/julia* /usr/bin/julia /usr/share/kotlinc /usr/bin/kotlin*  /usr/local/lib/node_modules /usr/share/php*
+        sudo rm -rf /usr/share/rust /usr/local/share/chromium /usr/lib/firefox /usr/local/share/gecko_driver /usr/share/mysql* /opt/mssql-tools /usr/local/sqlpackage /usr/share/*gradle* /usr/bin/gradle /usr/share/*maven* /usr/lib/jvm/ /usr/local/graalvm /usr/share/java/selenium-server*.jar /usr/local/lib/android /home/runner/.cargo /home/runner/.rustup  /opt/microsoft/powershell /opt/hostedtoolcache /opt/pipx /usr/share/vcpkg  /usr/share/dotnet /home/runner/.dotnet /usr/share/firebird* /opt/hhvm /usr/share/sbt /var/cache/snapd /home/runner/snap /usr/share/swift /usr/local/julia* /usr/bin/julia /usr/share/kotlinc /usr/bin/kotlin*  /usr/local/lib/node_modules /usr/share/php*
         sudo df -h
     - uses: hendrikmuhs/ccache-action@v1.2
       with:
         create-symlink: true
         key: 11451419190810
-        max-size: 16gb
+        max-size: 16384M
         
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
