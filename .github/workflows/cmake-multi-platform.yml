@@ -31,7 +31,7 @@ jobs:
       with:
         create-symlink: true
         key: 11451419190810
-        max-size: 16384M
+        max-size: 4096M
         
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -40,3 +40,4 @@ jobs:
       with:
         name: zig
         path: out/aarch64-linux-gnu-baseline
+        compression-level: 9
