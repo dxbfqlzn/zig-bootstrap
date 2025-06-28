@@ -36,3 +36,7 @@ jobs:
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: bash build.sh aarch64-linux-gnu baseline
+    - uses: actions/upload-artifact@v4
+      with:
+        name: zig
+        path: out/aarch64-linux-gnu-baseline
