@@ -14,6 +14,15 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(LLD_BUILT_STANDALONE TRUE)
 endif()
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+    message(STATUS "Using ccache: ${CCACHE_FOUND}")
+else()
+    message(STATUS "Ccache not found. Compiling with cache will be disabled.")
+endif(CCACHE_FOUND)
+
 # Must go below project(..)
 include(GNUInstallDirs)
 
