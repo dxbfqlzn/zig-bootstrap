@@ -39,5 +39,5 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: zig
-        path: out/aarch64-linux-gnu-baseline
+        path: out
         compression-level: 9
