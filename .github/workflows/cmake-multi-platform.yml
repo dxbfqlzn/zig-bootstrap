@@ -33,6 +33,8 @@ jobs:
         key: 11451419190810
         max-size: 4096M
         
+    - uses: goto-bus-stop/setup-zig@v2
+        
     - uses: Hanaasagi/zig-action-cache@master
       with:
         cache-on-failure: true     
