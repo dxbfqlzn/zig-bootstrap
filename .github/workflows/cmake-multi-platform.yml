@@ -31,7 +31,7 @@ jobs:
       with:
         create-symlink: true
         key: 11451419190810
-        max-size: 4096M
+        max-size: 1536M
         
     - uses: goto-bus-stop/setup-zig@v2
         
