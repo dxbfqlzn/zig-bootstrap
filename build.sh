@@ -180,7 +180,6 @@ cmake "$ROOTDIR/llvm" \
   -DLLVM_INCLUDE_BENCHMARKS=OFF \
   -DLLVM_INCLUDE_DOCS=OFF \
   -DLLVM_DEFAULT_TARGET_TRIPLE="$TARGET" \
-  -DLLVM_TARGETS_TO_BUILD="AArch64;X86;LoongArch" \
   -DLLVM_DISABLE_CCACHE=FORCE_ON \
   -DLLVM_TOOL_LLVM_LTO2_BUILD=FORCE_ON \
   -DLLVM_TOOL_LLVM_LTO_BUILD=FORCE_ON \
@@ -207,7 +206,6 @@ $ZIG build \
   --search-prefix "$ROOTDIR/out/$TARGET-$MCPU" \
   -Dflat \
   -Dstatic-llvm \
-  -Dminimal=true \
   -Doptimize=ReleaseFast \
   -Dstrip \
   -Dtarget="$TARGET" \
