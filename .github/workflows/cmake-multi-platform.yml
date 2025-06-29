@@ -31,13 +31,7 @@ jobs:
       with:
         create-symlink: true
         key: 11451419190810
-        max-size: 1536M
-        
-    - uses: goto-bus-stop/setup-zig@v2
-        
-    - uses: Hanaasagi/zig-action-cache@master
-      with:
-        cache-on-failure: true     
+        max-size: 1536M     
         
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
