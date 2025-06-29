@@ -207,6 +207,7 @@ $ZIG build \
   --search-prefix "$ROOTDIR/out/$TARGET-$MCPU" \
   -Dflat \
   -Dstatic-llvm \
+  -Dminimal=true \
   -Doptimize=ReleaseFast \
   -Dstrip \
   -Dtarget="$TARGET" \
