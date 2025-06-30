@@ -8,7 +8,8 @@ export CCACHE_COMPILERCHECK="content"    # 忽略编译器路径，只比较内�
 export LC_ALL=C
 export TZ=UTC
 export CCACHE_LOGFILE=/tmp/ccache.log  
-ccache --prune # 启用日志用于调试
+ccache --inspect
+ccache --cleanup
 
 TARGET="$1" # Example: riscv64-linux-gnu
 MCPU="$2" # Examples: `baseline`, `native`, `generic+v7a`, or `arm1176jzf_s`
