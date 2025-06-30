@@ -4,6 +4,11 @@
 set -eux
 
 PS4='[$(date "+%Y年 %m月 %d日 %A %H:%M:%S %Z")] [DEBUG] ${BASH_SOURCE}:${LINENO}: '
+export CCACHE_COMPILERCHECK="content"    # 忽略编译器路径，只比较内容
+export LC_ALL=C
+export TZ=UTC
+export CCACHE_LOGFILE=/tmp/ccache.log  
+ccache --prune # 启用日志用于调试
 
 TARGET="$1" # Example: riscv64-linux-gnu
 MCPU="$2" # Examples: `baseline`, `native`, `generic+v7a`, or `arm1176jzf_s`
@@ -61,7 +66,7 @@ cmake "$ROOTDIR/llvm" \
   -DCLANG_TOOL_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_C_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_LIBCLANG_BUILD=OFF -GNinja
-cmake --build . --target install
+cmake --build . --target install > log.txt
 
 # Now we build Zig, still with system C/C++ compiler, linking against LLVM,
 # Clang, LLD we just built from source.
@@ -197,7 +202,7 @@ cmake "$ROOTDIR/llvm" \
   -DCLANG_TOOL_C_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_LIBCLANG_BUILD=OFF \
   -DLLD_BUILD_TOOLS=OFF -GNinja
-cmake --build . --target install
+cmake --build . --target install >log.txt
 
 # Finally, we can cross compile Zig itself, with Zig.
 cd "$ROOTDIR/zig"
