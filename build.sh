@@ -91,7 +91,6 @@ cmake "$ROOTDIR/zlib" \
   -DCMAKE_C_COMPILER="ccache;$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
   -DCMAKE_CXX_COMPILER="ccache;$ZIG;c++;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
   -DCMAKE_ASM_COMPILER="ccache;$ZIG;cc;-fno-sanitize=all;-s;-target;$TARGET;-mcpu=$MCPU" \
-  $CMAKE_LINK_DEPENDS_WORKAROUND \
   -DCMAKE_LINK_DEPENDS_USE_LINKER=OFF \
   -DCMAKE_RC_COMPILER="$ROOTDIR/out/host/bin/llvm-rc" \
   -DCMAKE_AR="$ROOTDIR/out/host/bin/llvm-ar" \
