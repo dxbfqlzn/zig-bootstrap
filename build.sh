@@ -62,7 +62,7 @@ cmake "$ROOTDIR/llvm" \
   -DCLANG_TOOL_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_C_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_LIBCLANG_BUILD=OFF -GNinja
-cmake --build . --target install > log.txt
+/usr/bin/time -f "Time: %E\nMax memory: %M KB" cmake --build . --target install > log.txt
 
 # Now we build Zig, still with system C/C++ compiler, linking against LLVM,
 # Clang, LLD we just built from source.
@@ -73,7 +73,7 @@ cmake "$ROOTDIR/zig" \
   -DCMAKE_PREFIX_PATH="$ROOTDIR/out/host" \
   -DCMAKE_BUILD_TYPE=Release \
   -DZIG_VERSION="$ZIG_VERSION" -GNinja
-cmake --build . --target install -v
+/usr/bin/time -f "Time: %E\nMax memory: %M KB" cmake --build . --target install -v
 
 # Now we have Zig as a cross compiler.
 ZIG="$ROOTDIR/out/host/bin/zig"
@@ -95,14 +95,14 @@ cmake "$ROOTDIR/zlib" \
   -DCMAKE_RC_COMPILER="$ROOTDIR/out/host/bin/llvm-rc" \
   -DCMAKE_AR="$ROOTDIR/out/host/bin/llvm-ar" \
   -DCMAKE_RANLIB="$ROOTDIR/out/host/bin/llvm-ranlib" -GNinja
-cmake --build . --target install -v
+/usr/bin/time -f "Time: %E\nMax memory: %M KB" cmake --build . --target install -v
 
 # Same deal for zstd.
 # The build system for zstd is whack so I just put all the files here.
 mkdir -p "$ROOTDIR/out/$TARGET-$MCPU/lib"
 cp "$ROOTDIR/zstd/lib/zstd.h" "$ROOTDIR/out/$TARGET-$MCPU/include/zstd.h"
 cd "$ROOTDIR/out/$TARGET-$MCPU/lib"
-$ZIG build-lib \
+/usr/bin/time -f "Time: %E\nMax memory: %M KB" $ZIG build-lib \
   --name zstd \
   -target $TARGET \
   -mcpu=$MCPU \
@@ -197,11 +197,11 @@ cmake "$ROOTDIR/llvm" \
   -DCLANG_TOOL_C_ARCMT_TEST_BUILD=OFF \
   -DCLANG_TOOL_LIBCLANG_BUILD=OFF \
   -DLLD_BUILD_TOOLS=OFF -GNinja
-cmake --build . --target install >log.txt
+/usr/bin/time -f "Time: %E\nMax memory: %M KB" cmake --build . --target install >log.txt
 
 # Finally, we can cross compile Zig itself, with Zig.
 cd "$ROOTDIR/zig"
-$ZIG build \
+/usr/bin/time -f "Time: %E\nMax memory: %M KB" $ZIG build \
   --prefix "$ROOTDIR/out/zig-$TARGET-$MCPU" \
   --search-prefix "$ROOTDIR/out/$TARGET-$MCPU" \
   -Dflat \
