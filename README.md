@@ -11,7 +11,7 @@ to find and inspect the patch diffs.
  * LLVM, LLD, Clang 20.1.2
  * zlib 1.3.1
  * zstd 1.5.2
- * zig 0.15.0-dev.905+edf785db0
+ * zig 0.15.0-dev.929+31e46be74
 
 For other versions, check the git tags of this repository.
 
@@ -192,10 +192,10 @@ is more portable across Linux distributions.
 | `arm-netbsd-eabihf`      | OK     |
 | `armeb-netbsd-eabi`      | OK     |
 | `armeb-netbsd-eabihf`    | OK     |
-| `mips-netbsd-eabi`       | [#224](https://github.com/ziglang/zig-bootstrap/issues/224) |
-| `mips-netbsd-eabihf`     | [#225](https://github.com/ziglang/zig-bootstrap/issues/225) |
-| `mipsel-netbsd-eabi`     | [#226](https://github.com/ziglang/zig-bootstrap/issues/226) |
-| `mipsel-netbsd-eabihf`   | [#227](https://github.com/ziglang/zig-bootstrap/issues/227) |
+| `mips-netbsd-eabi`       | OK     |
+| `mips-netbsd-eabihf`     | OK     |
+| `mipsel-netbsd-eabi`     | OK     |
+| `mipsel-netbsd-eabihf`   | OK     |
 | `powerpc-netbsd-eabi`    | OK     |
 | `powerpc-netbsd-eabihf`  | OK     |
 | `riscv32-netbsd-none`    | [#233](https://github.com/ziglang/zig-bootstrap/issues/233) |

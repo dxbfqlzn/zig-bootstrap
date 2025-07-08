@@ -234,7 +234,6 @@ fuzzer_lib: ?CrtFile = null,
 glibc_so_files: ?glibc.BuiltSharedObjects = null,
 freebsd_so_files: ?freebsd.BuiltSharedObjects = null,
 netbsd_so_files: ?netbsd.BuiltSharedObjects = null,
-wasi_emulated_libs: []const wasi_libc.CrtFile,
 
 /// For example `Scrt1.o` and `libc_nonshared.a`. These are populated after building libc from source,
 /// The set of needed CRT (C runtime) files differs depending on the target and compilation settings.
@@ -1567,12 +1566,6 @@ pub const CreateOptions = struct {
     framework_dirs: []const []const u8 = &[0][]const u8{},
     frameworks: []const Framework = &.{},
     windows_lib_names: []const []const u8 = &.{},
-    /// These correspond to the WASI libc emulated subcomponents including:
-    /// * process clocks
-    /// * getpid
-    /// * mman
-    /// * signal
-    wasi_emulated_libs: []const wasi_libc.CrtFile = &.{},
     /// This means that if the output mode is an executable it will be a
     /// Position Independent Executable. If the output mode is not an
     /// executable this field is ignored.
@@ -2055,7 +2048,6 @@ pub fn create(gpa: Allocator, arena: Allocator, options: CreateOptions) !*Compil
             .function_sections = options.function_sections,
             .data_sections = options.data_sections,
             .native_system_include_paths = options.native_system_include_paths,
-            .wasi_emulated_libs = options.wasi_emulated_libs,
             .force_undefined_symbols = options.force_undefined_symbols,
             .link_eh_frame_hdr = link_eh_frame_hdr,
             .global_cc_argv = options.global_cc_argv,
@@ -2070,12 +2062,8 @@ pub fn create(gpa: Allocator, arena: Allocator, options: CreateOptions) !*Compil
             .emit_docs = try options.emit_docs.resolve(arena, &options, .docs),
         };
 
-        errdefer {
-            for (comp.windows_libs.keys()) |windows_lib| gpa.free(windows_lib);
-            comp.windows_libs.deinit(gpa);
-        }
-        try comp.windows_libs.ensureUnusedCapacity(gpa, options.windows_lib_names.len);
-        for (options.windows_lib_names) |windows_lib| comp.windows_libs.putAssumeCapacity(try gpa.dupe(u8, windows_lib), {});
+        comp.windows_libs = try std.StringArrayHashMapUnmanaged(void).init(gpa, options.windows_lib_names, &.{});
+        errdefer comp.windows_libs.deinit(gpa);
 
         // Prevent some footguns by making the "any" fields of config reflect
         // the default Module settings.
@@ -2306,6 +2294,13 @@ pub fn create(gpa: Allocator, arena: Allocator, options: CreateOptions) !*Compil
 
     if (comp.emit_bin != null and target.ofmt != .c) {
         if (!comp.skip_linker_dependencies) {
+            // These DLLs are always loaded into every Windows process.
+            if (target.os.tag == .windows and is_exe_or_dyn_lib) {
+                try comp.windows_libs.ensureUnusedCapacity(gpa, 2);
+                comp.windows_libs.putAssumeCapacity("kernel32", {});
+                comp.windows_libs.putAssumeCapacity("ntdll", {});
+            }
+
             // If we need to build libc for the target, add work items for it.
             // We go through the work queue so that building can be done in parallel.
             // If linking against host libc installation, instead queue up jobs
@@ -2381,11 +2376,6 @@ pub fn create(gpa: Allocator, arena: Allocator, options: CreateOptions) !*Compil
                 } else if (target.isWasiLibC()) {
                     if (!std.zig.target.canBuildLibC(target)) return error.LibCUnavailable;
 
-                    for (comp.wasi_emulated_libs) |crt_file| {
-                        comp.queued_jobs.wasi_libc_crt_file[@intFromEnum(crt_file)] = true;
-                    }
-                    comp.link_task_queue.pending_prelink_tasks += @intCast(comp.wasi_emulated_libs.len);
-
                     comp.queued_jobs.wasi_libc_crt_file[@intFromEnum(wasi_libc.execModelCrtFile(comp.config.wasi_exec_model))] = true;
                     comp.queued_jobs.wasi_libc_crt_file[@intFromEnum(wasi_libc.CrtFile.libc_a)] = true;
                     comp.link_task_queue.pending_prelink_tasks += 2;
@@ -2399,7 +2389,7 @@ pub fn create(gpa: Allocator, arena: Allocator, options: CreateOptions) !*Compil
 
                     // When linking mingw-w64 there are some import libs we always need.
                     try comp.windows_libs.ensureUnusedCapacity(gpa, mingw.always_link_libs.len);
-                    for (mingw.always_link_libs) |name| comp.windows_libs.putAssumeCapacity(try gpa.dupe(u8, name), {});
+                    for (mingw.always_link_libs) |name| comp.windows_libs.putAssumeCapacity(name, {});
                 } else {
                     return error.LibCUnavailable;
                 }
@@ -2497,7 +2487,6 @@ pub fn destroy(comp: *Compilation) void {
     comp.c_object_work_queue.deinit();
     comp.win32_resource_work_queue.deinit();
 
-    for (comp.windows_libs.keys()) |windows_lib| gpa.free(windows_lib);
     comp.windows_libs.deinit(gpa);
 
     {
@@ -7597,27 +7586,6 @@ fn getCrtPathsInner(
         .crtend = if (basenames.crtend) |basename| try crtFilePath(crt_files, basename) else null,
         .crtn = if (basenames.crtn) |basename| try crtFilePath(crt_files, basename) else null,
     };
-}
-
-pub fn addLinkLib(comp: *Compilation, lib_name: []const u8) !void {
-    // Avoid deadlocking on building import libs such as kernel32.lib
-    // This can happen when the user uses `build-exe foo.obj -lkernel32` and
-    // then when we create a sub-Compilation for zig libc, it also tries to
-    // build kernel32.lib.
-    if (comp.skip_linker_dependencies) return;
-    const target = &comp.root_mod.resolved_target.result;
-    if (target.os.tag != .windows or target.ofmt == .c) return;
-
-    // This happens when an `extern "foo"` function is referenced.
-    // If we haven't seen this library yet and we're targeting Windows, we need
-    // to queue up a work item to produce the DLL import library for this.
-    const gop = try comp.windows_libs.getOrPut(comp.gpa, lib_name);
-    if (gop.found_existing) return;
-    {
-        errdefer _ = comp.windows_libs.pop();
-        gop.key_ptr.* = try comp.gpa.dupe(u8, lib_name);
-    }
-    try comp.queueJob(.{ .windows_import_lib = gop.index });
 }
 
 /// This decides the optimization mode for all zig-provided libraries, including

@@ -306,6 +306,7 @@ fn mainArgs(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
         return jitCmd(gpa, arena, cmd_args, .{
             .cmd_name = "resinator",
             .root_src_path = "resinator/main.zig",
+            .windows_libs = &.{"advapi32"},
             .depend_on_aro = true,
             .prepend_zig_lib_dir_path = true,
             .server = use_server,
@@ -970,8 +971,6 @@ fn buildOutputType(
         .cli_link_inputs = .empty,
         .windows_libs = .empty,
         .link_inputs = .empty,
-
-        .wasi_emulated_libs = .{},
 
         .c_source_files = .{},
         .rc_source_files = .{},
@@ -3405,7 +3404,6 @@ fn buildOutputType(
         .framework_dirs = create_module.framework_dirs.items,
         .frameworks = resolved_frameworks.items,
         .windows_lib_names = create_module.windows_libs.keys(),
-        .wasi_emulated_libs = create_module.wasi_emulated_libs.items,
         .want_compiler_rt = want_compiler_rt,
         .want_ubsan_rt = want_ubsan_rt,
         .hash_style = hash_style,
@@ -3631,7 +3629,6 @@ fn buildOutputType(
             } else if (target.os.tag == .windows) {
                 try test_exec_args.appendSlice(arena, &.{
                     "--subsystem", "console",
-                    "-lkernel32",  "-lntdll",
                 });
             }
 
@@ -3686,8 +3683,6 @@ const CreateModule = struct {
     /// resolution, mutating the input array, and producing this data as
     /// output. Allocated with gpa.
     link_inputs: std.ArrayListUnmanaged(link.Input),
-
-    wasi_emulated_libs: std.ArrayListUnmanaged(wasi_libc.CrtFile),
 
     c_source_files: std.ArrayListUnmanaged(Compilation.CSourceFile),
     rc_source_files: std.ArrayListUnmanaged(Compilation.RcSourceFile),
@@ -3819,14 +3814,6 @@ fn createModule(
             .name_query => |nq| {
                 const lib_name = nq.name;
 
-                if (target.os.tag == .wasi) {
-                    if (wasi_libc.getEmulatedLibCrtFile(lib_name)) |crt_file| {
-                        try create_module.wasi_emulated_libs.append(arena, crt_file);
-                        create_module.opts.link_libc = true;
-                        continue;
-                    }
-                }
-
                 if (std.zig.target.isLibCLibName(target, lib_name)) {
                     create_module.opts.link_libc = true;
                     continue;
@@ -3845,7 +3832,8 @@ fn createModule(
                     .only_compiler_rt => continue,
                 }
 
-                if (target.isMinGW()) {
+                // We currently prefer import libraries provided by MinGW-w64 even for MSVC.
+                if (target.os.tag == .windows) {
                     const exists = mingw.libExists(arena, target, create_module.dirs.zig_lib, lib_name) catch |err| {
                         fatal("failed to check zig installation for DLL import libs: {s}", .{
                             @errorName(err),
@@ -5221,6 +5209,12 @@ fn cmdBuild(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
 
             try root_mod.deps.put(arena, "@build", build_mod);
 
+            var windows_libs: std.StringArrayHashMapUnmanaged(void) = .empty;
+
+            if (resolved_target.result.os.tag == .windows) {
+                try windows_libs.put(arena, "advapi32", {});
+            }
+
             const comp = Compilation.create(gpa, arena, .{
                 .dirs = dirs,
                 .root_name = "build",
@@ -5242,6 +5236,7 @@ fn cmdBuild(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
                 .cache_mode = .whole,
                 .reference_trace = reference_trace,
                 .debug_compile_errors = debug_compile_errors,
+                .windows_lib_names = windows_libs.keys(),
             }) catch |err| {
                 fatal("unable to create compilation: {s}", .{@errorName(err)});
             };
@@ -5345,6 +5340,7 @@ fn cmdBuild(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
 const JitCmdOptions = struct {
     cmd_name: []const u8,
     root_src_path: []const u8,
+    windows_libs: []const []const u8 = &.{},
     prepend_zig_lib_dir_path: bool = false,
     prepend_global_cache_path: bool = false,
     prepend_zig_exe_path: bool = false,
@@ -5461,6 +5457,13 @@ fn jitCmd(
             try root_mod.deps.put(arena, "aro", aro_mod);
         }
 
+        var windows_libs: std.StringArrayHashMapUnmanaged(void) = .empty;
+
+        if (resolved_target.result.os.tag == .windows) {
+            try windows_libs.ensureUnusedCapacity(arena, options.windows_libs.len);
+            for (options.windows_libs) |lib| windows_libs.putAssumeCapacity(lib, {});
+        }
+
         const comp = Compilation.create(gpa, arena, .{
             .dirs = dirs,
             .root_name = options.cmd_name,
@@ -5471,6 +5474,7 @@ fn jitCmd(
             .self_exe_path = self_exe_path,
             .thread_pool = &thread_pool,
             .cache_mode = .whole,
+            .windows_lib_names = windows_libs.keys(),
         }) catch |err| {
             fatal("unable to create compilation: {s}", .{@errorName(err)});
         };
@@ -6320,7 +6324,7 @@ fn cmdDumpLlvmInts(
         if (llvm.Target.getFromTriple(triple, &target, &error_message) != .False) @panic("bad");
         break :t target;
     };
-    const tm = llvm.TargetMachine.create(target, triple, null, null, .None, .Default, .Default, false, false, .Default, null);
+    const tm = llvm.TargetMachine.create(target, triple, null, null, .None, .Default, .Default, false, false, .Default, null, false);
     const dl = tm.createTargetDataLayout();
     const context = llvm.Context.create();
 
